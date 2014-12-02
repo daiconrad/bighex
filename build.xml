@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<project name="bighex" default="all" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<description>Build for BigHex</description>
+
+	<target name="all">
+		<antcall target="clean" />
+        <antcall target="jar" /> <!-- jar implies ivy-resolve,compile,create-manifest -->
+	</target>
+
+	<target name="clean" description="--> clean the project">
+		<delete dir="lib" failonerror="false" />
+		<delete dir="build" failonerror="false" />
+		<delete dir="classes" failonerror="false" />
+		<delete dir="test-classes" failonerror="false" />
+		<delete dir="test-reports" failonerror="false" />
+	</target>
+
+	<target name="create-manifest">
+        <mkdir dir="build" />
+        <manifest file="build/MANIFEST.MF">
+			<attribute name="Built-By" value="David Conrad" />
+            <section name="in/digo/math/">
+                <attribute name="Specification-Title" value="Math Utility Classes" />
+                <attribute name="Specification-Version" value="1.0" />
+                <attribute name="Specification-Vendor" value="David Conrad" />
+                <attribute name="Implementation-Title" value="in.digo.math" />
+                <attribute name="Implementation-Version" value="1.0" />
+                <attribute name="Implementation-Vendor" value="David Conrad" />
+            </section>
+		</manifest>
+	</target>
+
+	<path id="lib.path.id">
+	    <fileset dir="lib" />
+	</path>
+	<path id="lib.testpath.id">
+	    <pathelement path="classes" />
+        <path location="test-classes" />
+        <path refid="lib.path.id" />
+	</path>
+
+    <target name="ivy-resolve" description="--> resolve and retrieve dependencies with ivy">
+        <mkdir dir="lib" />
+        <ivy:retrieve pattern="lib/[artifact](-[classifier])-[revision].[ext]" type="nodep,jar" conf="runtime"/>
+    </target>
+
+    <target name="ivy-resolve-test" description="--> resolve and retrieve dependencies with ivy">
+        <mkdir dir="lib" />
+        <ivy:retrieve pattern="lib/[artifact](-[classifier])-[revision].[ext]" type="nodep,jar" conf="test"/>
+    </target>
+
+    <target name="compile" depends="ivy-resolve" description="--> compile source">
+        <mkdir dir="classes" />
+        <javac srcdir="src/main/java" destdir="classes" classpathref="lib.path.id" debug="true" includeantruntime="false" encoding="utf-8"/>
+    </target>
+
+	<target name="test-compile" depends="ivy-resolve-test,compile" description="--> compile source">
+    	<mkdir dir="test-classes" />
+        <javac srcdir="src/test/java" destdir="test-classes" classpathref="lib.testpath.id" includeantruntime="false" encoding="utf-8"/>
+    </target>
+
+    <target name="test" depends="test-compile" description="--> run the tests">
+    	<mkdir dir="test-reports" />
+        <junit printSummary="true" showOutput="false">
+            <classpath refid="lib.testpath.id"/>
+            <formatter type="plain" />
+            <batchtest todir="test-reports">
+                <fileset dir="test-classes">
+                    <include name="**/*Test.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="jar" depends="compile,create-manifest" description="--> package a jar file for this project">
+        <jar destfile="build/${ant.project.name}.jar" manifest="build/MANIFEST.MF">
+            <fileset dir="classes" />
+        </jar>
+    </target>
+</project>
